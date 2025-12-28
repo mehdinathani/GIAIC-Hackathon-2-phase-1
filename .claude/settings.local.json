@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -ExecutionPolicy Bypass -File \".specify/scripts/powershell/create-new-feature.ps1\" -Json -ShortName \"cli-basics\" \"Phase I In-Memory Python Console Todo App\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(uv add:*)",
+      "Bash(uv run python:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run todo --help:*)",
+      "Bash(uv run:*)",
+      "Bash(echo:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Skill(sp.specify)",
+      "Bash(git fetch:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(python:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(powershell:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(find:*)",
+      "Bash(git --version:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat\\(interactive-cli\\): add interactive menu-driven Todo CLI\n\nImplement Phase II of the Todo application with interactive TUI:\n- Interactive menu with 5 options \\(arrow key navigation\\)\n- Task list with selectable items and TAB toggle\n- Add/Update/Delete tasks via guided prompts\n- Bidirectional toggle \\(pending ↔ complete\\)\n- Chalk color scheme: complete=green, incomplete=red\n- Cross-platform support \\(Windows/msvcrt, Unix/termios\\)\n\nUser Stories:\n- US1: Main menu navigation\n- US2: Task list selection  \n- US3: Inline task creation\n- US4: Quick actions from task list\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
