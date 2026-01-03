@@ -94,6 +94,7 @@ class InteractiveApp:
         return [
             {"name": "Add Task", "value": MenuAction.ADD_TASK.value},
             {"name": "View Task List", "value": MenuAction.VIEW_LIST.value},
+            {"name": "Search & Filter", "value": "search_filter"},
             {"name": "Toggle Complete", "value": MenuAction.TOGGLE_COMPLETE.value},
             {"name": "Update Task", "value": MenuAction.UPDATE_TASK.value},
             {"name": "Delete Task", "value": MenuAction.DELETE_TASK.value},
@@ -125,8 +126,10 @@ class InteractiveApp:
         status = (
             "[green]Completed[/green]" if task.completed else "[yellow]Pending[/yellow]"
         )
-        date = task.created_at.strftime("%Y-%m-%d")
-        return f"[{task.id}] {task.title:<30} {status:<12} {date}"
+        priority = task.priority.value
+        p_color = "red" if task.priority == "HIGH" else "yellow" if task.priority == "MEDIUM" else "white"
+        due = task.due_date.strftime("%Y-%m-%d") if task.due_date else "No Due Date"
+        return f"[{task.id}] {task.title[:25]:<25} | [{p_color}]{priority:^6}[/] | {due:^10} | {status}"
 
     def show_main_menu(self) -> str | None:
         """Display the main menu and wait for user selection.
@@ -155,6 +158,14 @@ class InteractiveApp:
 
     def run(self) -> None:
         """Run the main interactive loop."""
+        filter_priority = None
+        filter_tag = None
+        search_query = None
+        sort_by = None
+
+        # Show overdue alert on startup
+        self.check_overdue_tasks()
+
         while True:
             try:
                 action = self.show_main_menu()
@@ -165,7 +176,9 @@ class InteractiveApp:
                 elif action == MenuAction.ADD_TASK.value:
                     self.handle_add_task()
                 elif action == MenuAction.VIEW_LIST.value:
-                    self.handle_view_list()
+                    self.handle_view_list(filter_priority, filter_tag, search_query, sort_by)
+                elif action == "search_filter":
+                    filter_priority, filter_tag, search_query, sort_by = self.handle_search_filter()
                 elif action == MenuAction.TOGGLE_COMPLETE.value:
                     self.handle_toggle_complete()
                 elif action == MenuAction.UPDATE_TASK.value:
@@ -176,6 +189,55 @@ class InteractiveApp:
                 self._handle_exit()
                 break
 
+    def handle_search_filter(self) -> tuple:
+        """Handle setting search, filter, and sort options."""
+        from todo.models import PriorityEnum
+
+        filter_priority = None
+        filter_tag = None
+        search_query = None
+        sort_by = None
+
+        print_info("Set Filter & Sort Options (Enter to skip/keep None)")
+
+        # Filter by Priority
+        p_choices = ["None"] + [p.value for p in PriorityEnum]
+        p_val = questionary.select(
+            "Filter by priority:",
+            choices=p_choices,
+            style=QUESTIONARY_STYLE
+        ).ask()
+        if p_val and p_val != "None":
+            filter_priority = PriorityEnum(p_val)
+
+        # Filter by Tag
+        t_val = questionary.text(
+            "Filter by tag (or Enter for None):",
+            style=QUESTIONARY_STYLE
+        ).ask()
+        if t_val:
+            filter_tag = t_val if t_val.startswith("#") else f"#{t_val}"
+
+        # Search Query
+        s_val = questionary.text(
+            "Search keywords:",
+            style=QUESTIONARY_STYLE
+        ).ask()
+        if s_val:
+            search_query = s_val
+
+        # Sort By
+        sort_choices = ["None", "priority", "due", "title"]
+        sort_val = questionary.select(
+            "Sort by:",
+            choices=sort_choices,
+            style=QUESTIONARY_STYLE
+        ).ask()
+        if sort_val and sort_val != "None":
+            sort_by = sort_val
+
+        return filter_priority, filter_tag, search_query, sort_by
+
     def _handle_exit(self) -> None:
         """Handle application exit with goodbye message."""
         print_success(
@@ -183,16 +245,21 @@ class InteractiveApp:
         )
         sys.exit(0)
 
-    def show_task_list(self) -> "Task | None":
+    def show_task_list(self, filter_priority=None, filter_tag=None, search_query=None, sort_by=None) -> "Task | None":
         """Display the list of tasks for selection with TAB toggle support.
 
         Returns:
             The selected task, or None if cancelled/empty.
         """
-        tasks = self._service.list_tasks()
+        tasks = self._service.list_tasks(
+            filter_priority=filter_priority,
+            filter_tag=filter_tag,
+            search_query=search_query,
+            sort_by=sort_by
+        )
 
         if not tasks:
-            print_info("No tasks found. Would you like to add one?")
+            print_info("No tasks found matching criteria.")
             return None
 
         return self._show_task_list_with_tab_toggle(tasks)
@@ -209,8 +276,25 @@ class InteractiveApp:
         """
         status = "✓" if task.completed else "○"
         status_color = ColorScheme.SUCCESS if task.completed else ColorScheme.PENDING
-        title = task.title[:40] + "..." if len(task.title) > 40 else task.title
-        return f"[{status_color}]{status}[/] {title}"
+        priority_color = "bold red" if task.priority == "HIGH" else "yellow" if task.priority == "MEDIUM" else "dim"
+        due_info = f" (Due: {task.due_date.strftime('%Y-%m-%d')})" if task.due_date else ""
+        title = task.title[:30] + "..." if len(task.title) > 30 else task.title
+        return f"[{status_color}]{status}[/] [{priority_color}]{task.priority.value[0]}[/] {title}{due_info}"
+
+    def check_overdue_tasks(self) -> None:
+        """Check for overdue tasks and display an alert if any found."""
+        tasks = self._service.list_tasks()
+        overdue_tasks = [t for t in tasks if self._service.is_overdue(t)]
+
+        if overdue_tasks:
+            count = len(overdue_tasks)
+            msg = f"You have [bold red]{count}[/bold red] overdue task(s)!\n"
+            for t in overdue_tasks[:3]:
+                msg += f"- {t.title} (due {t.due_date.strftime('%Y-%m-%d')})\n"
+            if count > 3:
+                msg += f"... and {count - 3} more"
+            print_error(msg)
+            wait_for_enter()
 
     def _show_task_list_with_tab_toggle(self, tasks: list["Task"]) -> "Task | None":
         """Display task list with TAB key toggle support.
@@ -430,25 +514,69 @@ class InteractiveApp:
 
         description = self.prompt_task_description()
 
-        from todo.models import TaskCreate
+        from todo.models import PriorityEnum, RecurrenceEnum, TaskCreate
 
-        data = TaskCreate(title=title, description=description if description else None)
+        # Priority selection
+        priority_name = questionary.select(
+            "Select priority:",
+            choices=[p.value for p in PriorityEnum],
+            default=PriorityEnum.LOW.value,
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        priority = PriorityEnum(priority_name) if priority_name else PriorityEnum.LOW
+
+        # Tags input
+        tags_str = questionary.text(
+            "Enter tags (comma-separated, e.g., #work, #home):",
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        tags = []
+        if tags_str:
+            for t in tags_str.split(","):
+                tag = t.strip()
+                if tag:
+                    if not tag.startswith("#"):
+                        tag = f"#{tag}"
+                    tags.append(tag)
+
+        # Due date input
+        due_str = questionary.text(
+            "Enter due date (YYYY-MM-DD) or leave empty:",
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        due_date = None
+        if due_str:
+            try:
+                from datetime import datetime
+                due_date = datetime.strptime(due_str, "%Y-%m-%d")
+            except ValueError:
+                print_error("Invalid date format. Proceeding without due date.")
+
+        # Recurrence selection
+        recur_name = questionary.select(
+            "Select recurrence:",
+            choices=[r.value for r in RecurrenceEnum],
+            default=RecurrenceEnum.NONE.value,
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        recurrence = RecurrenceEnum(recur_name) if recur_name else RecurrenceEnum.NONE
+
+        data = TaskCreate(
+            title=title,
+            description=description if description else None,
+            priority=priority,
+            tags=tags,
+            due_date=due_date,
+            recurrence=recurrence
+        )
         task = self._service.create_task(data)
 
-        content = f"[bold]ID:[/bold] {task.id}\n"
-        content += f"[bold]Title:[/bold] {task.title}\n"
-        if task.description:
-            content += f"[bold]Description:[/bold] {task.description}\n"
-        content += "[bold]Status:[/bold] [yellow]Pending[/yellow]\n"
-        content += (
-            f"[bold]Created:[/bold] {task.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
-        )
+        from todo import ui
+        ui.render_task_detail(task, title="Task Created", border_style="green")
 
-        print_success(content)
-
-    def handle_view_list(self) -> None:
+    def handle_view_list(self, filter_priority=None, filter_tag=None, search_query=None, sort_by=None) -> None:
         """Handle viewing the task list and selecting a task."""
-        task = self.show_task_list()
+        task = self.show_task_list(filter_priority, filter_tag, search_query, sort_by)
         if task is None:
             return
 
@@ -519,25 +647,76 @@ class InteractiveApp:
         if new_description is None:
             new_description = task.description
 
-        from todo.models import TaskUpdate
+        from todo.models import PriorityEnum, RecurrenceEnum, TaskUpdate
+
+        # Update Priority
+        new_priority_name = questionary.select(
+            "Update priority (or press Enter to keep current):",
+            choices=[p.value for p in PriorityEnum],
+            default=task.priority.value,
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        new_priority = PriorityEnum(new_priority_name) if new_priority_name else None
+
+        # Update Tags
+        new_tags_str = questionary.text(
+            "Update tags (comma-separated, or Enter to keep current):",
+            default=", ".join(task.tags),
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        new_tags = None
+        if new_tags_str is not None:
+            new_tags = []
+            for t in new_tags_str.split(","):
+                tag = t.strip()
+                if tag:
+                    if not tag.startswith("#"):
+                        tag = f"#{tag}"
+                    new_tags.append(tag)
+
+        # Update Due Date
+        default_due = task.due_date.strftime("%Y-%m-%d") if task.due_date else ""
+        new_due_str = questionary.text(
+            "Update due date (YYYY-MM-DD, or Enter to keep current):",
+            default=default_due,
+            style=QUESTIONARY_STYLE,
+        ).ask()
+
+        new_due_date = None
+        if new_due_str is not None:
+            if new_due_str == "":
+                new_due_date = None # Should we allow clearing? Yes if explicit. But here empty usually means no change in questionary if we have a default.
+                # Actually if default is "", and they press enter, it returns "".
+            else:
+                try:
+                    from datetime import datetime
+                    new_due_date = datetime.strptime(new_due_str, "%Y-%m-%d")
+                except ValueError:
+                    print_error("Invalid date format. Keeping current due date.")
+                    new_due_date = task.due_date
+
+        # Update Recurrence
+        new_recur_name = questionary.select(
+            "Update recurrence (or press Enter to keep current):",
+            choices=[r.value for r in RecurrenceEnum],
+            default=task.recurrence.value,
+            style=QUESTIONARY_STYLE,
+        ).ask()
+        new_recurrence = RecurrenceEnum(new_recur_name) if new_recur_name else None
 
         data = TaskUpdate(
             title=new_title if new_title != task.title else None,
-            description=new_description
-            if new_description != task.description
-            else None,
+            description=new_description if new_description != task.description else None,
+            priority=new_priority,
+            tags=new_tags,
+            due_date=new_due_date,
+            recurrence=new_recurrence
         )
 
         updated_task = self._service.update_task(task.id, data)
 
-        content = f"[bold]ID:[/bold] {updated_task.id}\n"
-        content += f"[bold]Title:[/bold] {updated_task.title}\n"
-        if updated_task.description:
-            content += f"[bold]Description:[/bold] {updated_task.description}\n"
-        status = "Completed" if updated_task.completed else "Pending"
-        content += f"[bold]Status:[/bold] {status}"
-
-        print_success(content)
+        from todo import ui
+        ui.render_task_detail(updated_task, title="Task Updated", border_style="green")
 
     def handle_delete_task(self, task: "Task | None" = None) -> None:
         """Handle deleting a task with confirmation.

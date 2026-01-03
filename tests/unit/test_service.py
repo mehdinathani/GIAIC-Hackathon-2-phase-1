@@ -3,8 +3,88 @@
 import pytest
 
 from todo.exceptions import TaskNotFoundError
-from todo.models import TaskCreate, TaskUpdate
+from todo.models import PriorityEnum, TaskCreate, TaskUpdate
 from todo.service import TaskService
+
+
+class TestFilteringAndSorting:
+    """Tests for filtering and sorting list_tasks operation."""
+
+    def test_filter_by_priority(self, service: TaskService) -> None:
+        """List should filter tasks by priority."""
+        service.create_task(TaskCreate(title="High", priority=PriorityEnum.HIGH))
+        service.create_task(TaskCreate(title="Medium", priority=PriorityEnum.MEDIUM))
+        service.create_task(TaskCreate(title="Low", priority=PriorityEnum.LOW))
+
+        high_tasks = service.list_tasks(filter_priority=PriorityEnum.HIGH)
+        assert len(high_tasks) == 1
+        assert high_tasks[0].title == "High"
+
+    def test_filter_by_tag(self, service: TaskService) -> None:
+        """List should filter tasks by tag."""
+        service.create_task(TaskCreate(title="Work", tags=["#work"]))
+        service.create_task(TaskCreate(title="Personal", tags=["#personal"]))
+
+        work_tasks = service.list_tasks(filter_tag="#work")
+        assert len(work_tasks) == 1
+        assert work_tasks[0].title == "Work"
+
+    def test_search_query(self, service: TaskService) -> None:
+        """List should filter tasks by search query in title or description."""
+        service.create_task(TaskCreate(title="Buy milk", description="at store"))
+        service.create_task(TaskCreate(title="Call mom"))
+
+        results = service.list_tasks(search_query="milk")
+        assert len(results) == 1
+        assert results[0].title == "Buy milk"
+
+        results = service.list_tasks(search_query="store")
+        assert len(results) == 1
+        assert results[0].title == "Buy milk"
+
+    def test_sort_by_priority(self, service: TaskService) -> None:
+        """List should sort tasks by priority (High < Medium < Low)."""
+        service.create_task(TaskCreate(title="Low", priority=PriorityEnum.LOW))
+        service.create_task(TaskCreate(title="High", priority=PriorityEnum.HIGH))
+        service.create_task(TaskCreate(title="Medium", priority=PriorityEnum.MEDIUM))
+
+        tasks = service.list_tasks(sort_by="priority")
+        assert tasks[0].title == "High"
+        assert tasks[1].title == "Medium"
+        assert tasks[2].title == "Low"
+
+    def test_sort_by_title(self, service: TaskService) -> None:
+        """List should sort tasks by title alphabetically."""
+        service.create_task(TaskCreate(title="Zebra"))
+        service.create_task(TaskCreate(title="Apple"))
+
+        tasks = service.list_tasks(sort_by="title")
+        assert tasks[0].title == "Apple"
+        assert tasks[1].title == "Zebra"
+
+    def test_overdue_calculation(self, service: TaskService) -> None:
+        """Service should correctly identify overdue tasks."""
+        from datetime import datetime, timedelta
+
+        # Overdue
+        past_due = datetime.now() - timedelta(days=1)
+        t1 = service.create_task(TaskCreate(title="Past", due_date=past_due))
+        assert service.is_overdue(t1) is True
+
+        # Not overdue (future)
+        future_due = datetime.now() + timedelta(days=1)
+        t2 = service.create_task(TaskCreate(title="Future", due_date=future_due))
+        assert service.is_overdue(t2) is False
+
+        # Not overdue (no due date)
+        t3 = service.create_task(TaskCreate(title="No due"))
+        assert service.is_overdue(t3) is False
+
+        # Not overdue (completed)
+        t4 = service.create_task(TaskCreate(title="Done Past", due_date=past_due))
+        service.complete_task(t4.id)
+        task4 = service.get_task(t4.id)
+        assert service.is_overdue(task4) is False
 
 
 class TestCreateTask:

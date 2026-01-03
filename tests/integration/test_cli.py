@@ -1,6 +1,7 @@
 """Integration tests for CLI commands using Typer testing utilities."""
 
 import pytest
+from pathlib import Path
 from typer.testing import CliRunner
 
 from todo import cli
@@ -13,13 +14,14 @@ def runner() -> CliRunner:
 
 
 @pytest.fixture(autouse=True)
-def reset_app_state() -> None:
+def reset_app_state(tmp_path: Path) -> None:
     """Reset the application state before each test.
 
-    This is necessary because the CLI module uses module-level state.
+    Uses a temporary file to avoid pollution between tests and real data.
     """
-    cli._repository._tasks.clear()
-    cli._repository._next_id = 1
+    test_file = tmp_path / "test_integration_tasks.json"
+    cli._repository = cli.FileTaskRepository(file_path=str(test_file))
+    cli._service = cli.TaskService(repository=cli._repository)
 
 
 class TestAddCommand:
