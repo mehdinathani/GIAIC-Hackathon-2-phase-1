@@ -11,7 +11,7 @@ console = Console()
 PRIORITY_COLORS = {
     PriorityEnum.HIGH: "bold red",
     PriorityEnum.MEDIUM: "bold yellow",
-    PriorityEnum.LOW: "white",
+    PriorityEnum.LOW: "green",
 }
 
 def is_overdue(task: Task) -> bool:

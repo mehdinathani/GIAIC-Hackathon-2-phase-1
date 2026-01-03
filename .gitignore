@@ -8,3 +8,19 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment variables
+.env
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Test Coverage
+.coverage
+htmlcov/

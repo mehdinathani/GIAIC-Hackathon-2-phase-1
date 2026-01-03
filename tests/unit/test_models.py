@@ -1,13 +1,25 @@
 """Unit tests for Pydantic models."""
 
+from datetime import datetime, timedelta
 import pytest
 from pydantic import ValidationError
 
-from todo.models import PriorityEnum, Task, TaskCreate, TaskUpdate
+from todo.models import PriorityEnum, RecurrenceEnum, Task, TaskCreate, TaskUpdate
 
 
 class TestTaskCreate:
     """Tests for TaskCreate model validation."""
+
+    def test_create_with_recurrence_and_due_date(self) -> None:
+        """TaskCreate should accept recurrence and due date."""
+        due = datetime(2026, 1, 1)
+        data = TaskCreate(
+            title="Recalling task",
+            recurrence=RecurrenceEnum.DAILY,
+            due_date=due
+        )
+        assert data.recurrence == RecurrenceEnum.DAILY
+        assert data.due_date == due
 
     def test_create_with_priority(self) -> None:
         """TaskCreate should accept a priority level."""

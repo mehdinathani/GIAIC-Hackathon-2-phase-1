@@ -10,7 +10,7 @@ from todo import ui
 from todo.exceptions import TaskNotFoundError
 from todo.interactive import InteractiveApp
 from todo.models import PriorityEnum, RecurrenceEnum, TaskCreate, TaskUpdate
-from todo.repository import InMemoryTaskRepository
+from todo.repository import FileTaskRepository, InMemoryTaskRepository
 from todo.service import TaskService
 
 # Initialize the application components
@@ -89,6 +89,9 @@ def list_tasks(
     filter_tag: Annotated[
         str | None, typer.Option("--filter-tag", "-t", help="Filter by tag")
     ] = None,
+    filter_status: Annotated[
+        str | None, typer.Option("--filter-status", help="Filter by status ('completed' or 'pending')")
+    ] = None,
     search: Annotated[
         str | None, typer.Option("--search", "-s", help="Search in title/description")
     ] = None,
@@ -97,9 +100,20 @@ def list_tasks(
     ] = None,
 ) -> None:
     """Display tasks with optional filtering and sorting."""
+    status_bool = None
+    if filter_status:
+        if filter_status.lower() == "completed":
+            status_bool = True
+        elif filter_status.lower() == "pending":
+            status_bool = False
+        else:
+            ui.console.print(Panel(f"Invalid status: {filter_status}. Use 'completed' or 'pending'.", title="[red]Error[/red]", border_style="red"))
+            raise typer.Exit(code=1)
+
     tasks = _service.list_tasks(
         filter_priority=filter_priority,
         filter_tag=filter_tag,
+        filter_status=status_bool,
         search_query=search,
         sort_by=sort_by,
     )

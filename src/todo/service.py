@@ -34,6 +34,7 @@ class TaskService:
         self,
         filter_priority: PriorityEnum | None = None,
         filter_tag: str | None = None,
+        filter_status: bool | None = None,
         search_query: str | None = None,
         sort_by: str | None = None,
     ) -> list[Task]:
@@ -41,6 +42,7 @@ class TaskService:
         return self._repository.get_all(
             filter_priority=filter_priority,
             filter_tag=filter_tag,
+            filter_status=filter_status,
             search_query=search_query,
             sort_by=sort_by,
         )

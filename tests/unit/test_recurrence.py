@@ -1,15 +1,17 @@
 """Unit tests for task recurrence logic."""
 
+from pathlib import Path
 from datetime import datetime, timedelta
 import pytest
 from todo.models import TaskCreate, RecurrenceEnum
 from todo.service import TaskService
-from todo.repository import InMemoryTaskRepository
+from todo.repository import FileTaskRepository
 
 
 @pytest.fixture
-def service():
-    repository = InMemoryTaskRepository()
+def service(tmp_path: Path):
+    test_file = tmp_path / "test_recur_tasks.json"
+    repository = FileTaskRepository(file_path=str(test_file))
     return TaskService(repository)
 
 

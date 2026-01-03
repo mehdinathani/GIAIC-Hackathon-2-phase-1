@@ -4,30 +4,40 @@
 
 ### 1. Basic Organization
 ```bash
-todo add "Finish report" --priority high --tag work
-todo list --filter-priority high
-# EXPECTED: "Finish report" shown in Red with #work tag
+uv run todo add "Critical Fix" --priority HIGH --tags "#work,#urgent"
+uv run todo list
+# EXPECTED: "Critical Fix" shown with [HIGH] in Red and both tags listed.
 ```
 
 ### 2. Search & Filter
 ```bash
-todo add "Buy milk" --tag home
-todo add "Call vet" --tag home
-todo list --filter-tag home
-# EXPECTED: Both home tasks shown
+uv run todo list --search "Fix"
+# EXPECTED: Only "Critical Fix" visible.
+
+uv run todo list --filter-priority MEDIUM
+# EXPECTED: Only tasks with MEDIUM priority visible.
 ```
 
 ### 3. Intelligence Engine (Recurrence)
 ```bash
-todo add "Daily Standup" --recur daily --due 2025-12-31
-todo complete <id>
-todo list
-# EXPECTED: "Daily Standup" (new instance) appears with due date 2026-01-01
+# Set a task for today
+uv run todo add "Daily Exercise" --recurrence DAILY --due-date 2026-01-01
+uv run todo list
+# Locate the ID (e.g., 5)
+
+uv run todo complete 5
+# EXPECTED: A new "Daily Exercise" task appears with due_date 2026-01-02.
 ```
 
 ### 4. Overdue Highlighting
 ```bash
-# Given a task with due date in the past
-todo list
-# EXPECTED: Task title is BOLD RED
+uv run todo add "Late Task" --due-date 2025-12-25
+uv run todo list
+# EXPECTED: "Late Task" title rendered in BOLD RED.
+```
+
+### 5. Validation Errors
+```bash
+uv run todo add "Bad Date" --due-date "not-a-date"
+# EXPECTED: Re-prompting or clear error message prompting for YYYY-MM-DD.
 ```

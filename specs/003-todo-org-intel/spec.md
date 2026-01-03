@@ -15,6 +15,15 @@
 - **FR-ADV-03**: Intelligence Engine: If a task is recurring, when marked 'Complete', automatically create a new task for the next period.
 - **FR-ADV-04**: Reminders: Highlight overdue tasks in bold red in the console list."
 
+## Clarifications
+
+### Session 2026-01-01
+- Q: How should the CLI respond when it fails to save tasks to disk? → A: Option A - Show a descriptive error and offer "Retry" or "Save to temporary file".
+- Q: What should be displayed if a search or filter yields zero items? → A: Option A - Show "No tasks found matching [criteria]" and help text.
+- Q: How should the CLI handle invalid inputs (priority/date)? → A: Option B - Loop and re-prompt until a valid value is provided.
+- Q: How should DAILY/WEEKLY recurrence handle month/year transitions? → A: Option A - Use standard calendar logic (e.g., Feb 28 -> Mar 1).
+- Q: How to calculate next due date for delayed recurring tasks? → A: Option B - Based on completion date + interval (DAILY/WEEKLY).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Task Organization (Priority: P1)
@@ -80,10 +89,11 @@ As a user, I want some tasks to repeat automatically so that I don't have to man
 
 ### Edge Cases
 
-- **Invalid Priority**: What happens if a user tries to set an unsupported priority level? (System should default to LOW or error gracefully).
-- **Invalid ISO Date**: How does the system handle a malformed date string? (System should prompt for correct format).
-- **Leap Years/Month Ends**: How does the DAILY/WEEKLY logic handle transitions like Feb 28th to March 1st or December 31st to January 1st?
-- **Search with No Results**: What is the feedback when a search or filter yields zero items?
+- **Invalid Priority**: If a user enters an unsupported priority level, the system MUST display an error message and re-prompt for input until a valid value (HIGH, MEDIUM, LOW) is provided.
+- **Invalid ISO Date**: If a user enters a malformed date string, the system MUST display an error message and re-prompt for input until a valid ISO 8601 date (YYYY-MM-DD) is provided.
+- **Leap Years/Month Ends**: The recurrence engine MUST use standard calendar logic (leveraging language libraries) to accurately handle month-end transitions, leap years, and year-end rollovers (e.g., Feb 28th to March 1st in non-leap years).
+- **Search with No Results**: When a search or filter yields zero items, the system MUST display "No tasks found matching [criteria]" along with instructions on how to clear the search/filter.
+- **Persistence Failure**: If the system fails to save tasks, it MUST show a descriptive error and offer "Retry" or "Save to temporary file" options to prevent data loss.
 
 ## Requirements *(mandatory)*
 

@@ -1,7 +1,7 @@
 # Tasks: Todo Organization & Intelligence
 
 **Input**: Design documents from `/specs/003-todo-org-intel/`
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -15,18 +15,19 @@
 
 **Purpose**: Project initialization and dependency setup
 
-- [X] T001 Install `python-dateutil` and update project dependencies
+- [X] T001 Verify `pydantic` and `rich` are installed and up to date in `pyproject.toml`
 - [X] T002 [P] Create initial documentation files in `specs/003-todo-org-intel/` (completed)
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core model updates that all user stories depend on
+**Purpose**: Core model updates and utilities that all user stories depend on
 
-- [X] T003 Update `Task` model with `PriorityEnum` and `Tags` in `src/todo/models.py`
-- [X] T004 Add `due_date` and `recurrence` fields to `Task` model in `src/todo/models.py`
-- [X] T005 [P] Implement `PriorityEnum` and `RecurrenceEnum` in `src/todo/models.py`
+- [X] T003 [P] Implement `PriorityEnum` and `RecurrenceEnum` in `src/todo/models.py`
+- [X] T004 Update `Task` and `TaskCreate`/`TaskUpdate` models with `priority`, `tags`, `due_date`, and `recurrence` in `src/todo/models.py`
+- [X] T005 [P] Implement atomic write helper for repository persistence in `src/todo/repository.py`
+- [X] T006 Add unit tests for new model fields and validation in `tests/unit/test_models.py`
 
 **Checkpoint**: Core models ready - user story implementation can now begin
 
@@ -40,11 +41,11 @@
 
 ### Implementation for User Story 1
 
-- [X] T006 [P] [US1] Implement priority color mapping in `src/todo/ui.py`
-- [X] T007 [US1] Update `add` command in `src/todo/main.py` for `--priority` and `--tag`
-- [X] T008 [US1] Update `update` command in `src/todo/main.py` for `--priority` and `--tag`
-- [X] T009 [US1] Update task list rendering to show priority and tags in `src/todo/ui.py`
-- [X] T010 [US1] Add unit tests for priority and tag storage in `tests/unit/test_models.py`
+- [ ] T007 [P] [US1] Define priority color mapping using Rich styles in `src/todo/ui.py`
+- [ ] T008 [US1] Update `add` and `update` logic for `--priority` and `--tags` in `src/todo/service.py`
+- [ ] T009 [US1] Update Command Line Interface to accept `--priority` and `--tags` in `src/todo/cli.py`
+- [ ] T010 [US1] Update task list rendering to display color-coded priority and tags in `src/todo/ui.py`
+- [ ] T011 [US1] Add unit tests for priority and tag propagation in `tests/unit/test_service.py`
 
 **Checkpoint**: Priority and tagging are fully functional and testable
 
@@ -54,17 +55,17 @@
 
 **Goal**: Implement keyword search and filtering/sorting by metadata
 
-**Independent Test**: Use `todo list --filter-priority high` or `todo list --sort due` and verify results.
+**Independent Test**: Use `todo list --search milk` or `todo list --filter-priority HIGH` and verify results.
 
 ### Implementation for User Story 2
 
-- [X] T011 [US2] Add filter/search methods to `InMemoryRepository` in `src/todo/repository.py`
-- [X] T012 [US2] Add sort logic to `InMemoryRepository` in `src/todo/repository.py`
-- [X] T013 [US2] Integrate search/filter/sort into `TaskService` in `src/todo/service.py`
-- [X] T014 [US2] Add `--filter-priority`, `--filter-tag`, and `--sort` flags to `list` command in `src/todo/main.py`
-- [X] T015 [US2] Add unit tests for search and filter logic in `tests/unit/test_service.py`
+- [ ] T012 [US2] Implement `search` and `filter` logic in `TaskService` in `src/todo/service.py`
+- [ ] T013 [US2] Implement `sort` logic (priority Desc, due_date Asc) in `TaskService` in `src/todo/service.py`
+- [ ] T014 [US2] Add `--search`, `--filter-priority`, `--filter-status`, and `--sort` flags to `list` command in `src/todo/cli.py`
+- [ ] T015 [US2] Handle "No tasks found" feedback for search/filter in `src/todo/ui.py`
+- [ ] T016 [US2] Add integration tests for search/filter/sort CLI commands in `tests/integration/test_cli.py`
 
-**Checkpoint**: Users can search, filter, and sort their tasks effectively
+**Checkpoint**: Users can efficiently find and organize their workload
 
 ---
 
@@ -76,12 +77,12 @@
 
 ### Implementation for User Story 3
 
-- [X] T016 [US3] Update `add` and `update` commands for `--due` flag in `src/todo/cli.py`
-- [X] T017 [US3] Implement overdue detection logic in `src/todo/service.py`
-- [X] T018 [US3] Add conditional BOLD RED formatting for overdue tasks in `src/todo/ui.py`
-- [X] T019 [US3] Add unit tests for overdue calculation in `tests/unit/test_service.py`
+- [ ] T017 [US3] Update `add` and `update` commands for `--due-date` flag in `src/todo/cli.py`
+- [ ] T018 [US3] Implement overdue detection logic in `src/todo/service.py`
+- [ ] T019 [US3] Apply [bold red] formatting to overdue task titles in `src/todo/ui.py`
+- [ ] T020 [US3] Add unit tests for overdue calculation logic in `tests/unit/test_service.py`
 
-**Checkpoint**: Due dates and reminders are functional
+**Checkpoint**: Due dates and visual reminders are functional
 
 ---
 
@@ -93,11 +94,10 @@
 
 ### Implementation for User Story 4
 
-- [X] T020 [US4] Update `add` command for `--recur` flag in `src/todo/cli.py`
-- [X] T021 [US4] Implement `RecurrenceEngine` logic in `src/todo/service.py`
-- [X] T022 [US4] Integrate recurrence engine into the `complete` command flow in `src/todo/service.py`
-- [X] T023 [US4] Add unit tests for DAILY and WEEKLY recurrence math in `tests/unit/test_recurrence.py`
-- [X] T024 [P] [US4] Build a Claude Code **Skill** for validating task recurrence logic in `.specify/skills/validate-recurrence.py`
+- [ ] T021 [US4] Update `add` command for `--recurrence` flag (DAILY, WEEKLY) in `src/todo/cli.py`
+- [ ] T022 [US4] Implement recurrence instance generation logic in `src/todo/service.py`
+- [ ] T023 [US4] Trigger recurrence engine during `complete_task` flow in `src/todo/service.py`
+- [ ] T024 [US4] Add unit tests for lease year and month-end recurrence math in `tests/unit/test_recurrence.py`
 
 **Checkpoint**: Recurring tasks are being automatically spawned correctly
 
@@ -105,11 +105,12 @@
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Final verification and documentation
+**Purpose**: Final verification, error handling, and documentation
 
-- [X] T025 Run `quickstart.md` validation scenarios
-- [X] T026 Perform final CLI help text cleanup in `src/todo/cli.py`
-- [X] T027 [P] Update project README with new organization and intelligence features
+- [ ] T025 [P] Implement interactive re-prompting for invalid inputs in `src/todo/cli.py`
+- [ ] T026 Implement persistence failure (Retry/Save As) error handling in `src/todo/repository.py`
+- [ ] T027 Run all scenarios from `specs/003-todo-org-intel/quickstart.md`
+- [ ] T028 [P] Update project `CLAUDE.md` and `README.md` with new features
 
 ---
 
@@ -117,23 +118,15 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: Install `python-dateutil` first.
-- **Foundational (Phase 2)**: Mandatory for all user stories.
-- **User Stories (Phase 3-6)**: Can proceed in parallel after Phase 2.
-- **Polish (Phase 7)**: Requires all user stories to be complete.
+- **Phase 2 (Foundational)**: MUST be completed before any User Story phases because all feature logic depends on the updated model schema and repository helpers.
+- **User Stories (Phase 3-6)**: Are mostly independent after Phase 2, but US4 benefits from US3 (due dates).
+- **Phase 7 (Polish)**: Final hardening and cleanup.
 
-### User Story Dependencies
+### Parallel Opportunities
 
-- **US1 & US2**: High Priority - MVP focus.
-- **US3**: Depends on `due_date` field (Foundation).
-- **US4**: Depends on `recurrence` field (Foundation) and utilizes `TaskService` (Foundation).
-
-## Parallel Opportunities
-
-- **T005**: Models can be defined while other foundational work is planned.
-- **US1 & US2**: Can be implemented simultaneously if state doesn't conflict.
-- **T010, T015, T019, T023**: All unit test tasks can run in parallel with their implementations.
-- **T024**: Skill creation can happen in parallel with recurrence engine implementation.
+- **T003 & T005**: Models and repository helpers can be modified in parallel.
+- **T007**: UI Styles can be defined while service logic is being worked on.
+- **T006, T011, T016, T020, T024**: Unit and integration tests can be written alongside implementation.
 
 ---
 
@@ -141,13 +134,12 @@
 
 ### MVP First (User Story 1 & 2)
 
-1. Complete Phase 1 & 2.
-2. Complete US1 (Priorities/Tags).
-3. Complete US2 (Search/Filter/Sort).
-4. **STOP and VALDIATE**: Ensure core organization is robust.
+1. Start with **Phase 2** (Models/Repository).
+2. Complete **US1** (Priorities/Tags) to provide immediate visual value.
+3. Complete **US2** (Search/Filter/Sort) to handle growing task lists.
+4. **VALDIATE**: Ensure core organization is robust before adding intelligence.
 
-### Incremental Delivery
+### Intelligence Layer
 
-1. Add US3 (Due Dates) to enable deadline tracking.
-2. Add US4 (Recurrence) to complete the intelligence suite.
-3. Validate each increment with the provided `quickstart.md` scenarios.
+1. Add **US3** (Due Dates) to introduce the temporal dimension.
+2. Finish with **US4** (Recurrence) and **Phase 7** for a complete automated experience.
