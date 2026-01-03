@@ -38,7 +38,8 @@
       "Bash(/root/hackathon/todo-evolution/.specify/scripts/bash/check-prerequisites.sh:*)",
       "Bash(/root/hackathon/todo-evolution/.specify/scripts/bash/setup-plan.sh:*)",
       "Bash(/root/hackathon/todo-evolution/.specify/scripts/bash/update-agent-context.sh:*)",
-      "Bash(/root/hackathon/todo-evolution/.specify/scripts/bash/create-phr.sh:*)"
+      "Bash(/root/hackathon/todo-evolution/.specify/scripts/bash/create-phr.sh:*)",
+      "Skill(sp.git.commit_pr)"
     ]
   }
 }
